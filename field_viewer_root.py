@@ -1,87 +1,66 @@
-import happi
 import uproot
 import numpy as np
 import matplotlib.pyplot as plt
+
+from input_parameters import *
 
 with uproot.open("B_field_inputs.root") as f:
     Bx_f = f["B_field"]["Bx"].array()
     By_f = f["B_field"]["By"].array()
     Bz_f = f["B_field"]["Bz"].array()
 
-dim_half = 16
+print(f"Shape of each field array: {np.shape(Bx_f)}")
 
-slice_y = By_f[dim_half][:][:]
-#slice_y = Bx_f[:][dim_half][:]
-#slice_y = By_f[:][:]
-shape = np.shape(slice_y)
-print(f"Before saving shape: {shape}")
+first_dim_half = int(np.shape(Bx_f)[0]/2)
+second_dim_half = int(np.shape(Bx_f)[1]/2)
+third_dim_half = int(np.shape(Bx_f)[2]/2)
+# third_dim_half = 4 # at first ring
 
-slice_z = Bz_f[dim_half][:][:]
-#slice_z = Bz_f[:][dim_half][:]
-#slice_z = Bz_f[:][:]
+slice_y_forz = By_f[first_dim_half, :, :]
+slice_z_fory = Bz_f[first_dim_half, :, :]
 
-@np.vectorize
-def mapping_y(i, j):
-    return slice_y[i][j]
+slice_x_forz = Bx_f[:, second_dim_half, :]
+slice_z_forx = Bz_f[:, second_dim_half, :]
+print(f"Before saving shape of slice_x: {np.shape(slice_x_forz)}")
 
-@np.vectorize
-def mapping_z(i, j):
-    return slice_z[i][j]
+slice_y_forx = By_f[:,:,third_dim_half]
+slice_x_fory = Bx_f[:,:,third_dim_half]
+print(f"Before saving shape y_forx: {np.shape(slice_y_forx)}")
+print(f"Before saving shape x_fory: {np.shape(slice_x_fory)}")
 
-Y, Z = np.mgrid[0:shape[0], 0:shape[1]] 
-# U, V = slice_y[Y][Z], slice_z[Y][Z]
-#U = mapping_y(Y.T,Z.T)
-#V = mapping_z(Y.T,Z.T)
+# Plot individually without meshgrid
 
-U = mapping_y(Y,Z)
-V = mapping_z(Y,Z)
+def plot_fields(name_x, x_field_name, x_field, name_y, y_field_name, y_field): 
+    fig, ax = plt.subplots(3,3)
+    fig.tight_layout()
+    plt.subplot(3,1,1)
+    plt.imshow(x_field, cmap='seismic', interpolation='nearest')
+    plt.gca().set_aspect('equal')
+    plt.title(x_field_name)
+    plt.colorbar()
 
-print(f"U shape: {np.shape(U)}")
-r = np.power(np.add(np.power(U,2), np.power(V,2)),0.5)
-skip = (slice(None, None, 8), slice(None, None, 8))
-plt.quiver(Y, Z, U/r, V/r, width=.005, pivot='mid')
-plt.savefig("By_Bz.png", bbox_inches="tight", dpi=300, )
+    plt.subplot(3,1,2)
+    plt.imshow(y_field, cmap='seismic', interpolation='nearest')
+    plt.gca().set_aspect('equal')
+    plt.title(y_field_name)
+    plt.colorbar()
 
-# with uproot.recreate("vector_fields.root") as f:
-#     f["B_field"] = {"Bx" : np.array(Bx), "By" : np.array(By), "Bz" : np.array(Bz)}
+    plt.subplot(3,1,3)
+    for i in range(0, np.shape(x_field)[0], 1):
+        for j in range(0, np.shape(y_field)[1], 2):
+            x_value = x_field[i][j]
+            y_value = y_field[i][j]
 
-# print("Saved to root file.")
+            r = np.power(np.add(np.power(x_value,2), np.power(y_value,2)),0.5)
+            
+            plt.quiver(j, i, x_value/r, y_value/r, width=.005, pivot='mid')
 
-# with uproot.open("vector_fields.root") as f:
-#     Bx = f["B_field"]["Bx"].array()
-    
-# print(np.shape(Bx))
+    plt.xlabel(name_x)
+    plt.ylabel(name_y)
+    plt.title(y_field_name + " vs " + x_field_name)
+    plt.gca().set_aspect('equal')
+    plt.savefig(y_field_name + "_" + x_field_name + "_fields.png", bbox_inches="tight", dpi=600)
 
-dim_half = 16
-
-slice_x = Bx_f[:][dim_half][:]
-#slice_y = Bx_f[::][dim_half][:]
-#slice_y = By_f[:][:]
-shape = np.shape(slice_x)
-print(f"Before saving shape: {shape}")
-
-slice_z = Bz_f[:][dim_half][:]
-#slice_z = Bz_f[:][dim_half][:]
-#slice_z = Bz_f[:][:]
-
-@np.vectorize
-def mapping_x(i, j):
-    return slice_x[i][j]
-
-@np.vectorize
-def mapping_z(i, j):
-    return slice_z[i][j]
-
-X, Z = np.mgrid[0:shape[0], 0:shape[1]] 
-# U, V = slice_y[Y][Z], slice_z[Y][Z]
-#U = mapping_y(Y.T,Z.T)
-#V = mapping_z(Y.T,Z.T)
-
-U = mapping_y(X,Z)
-V = mapping_z(X,Z)
-
-print(f"U shape: {np.shape(U)}")
-r = np.power(np.add(np.power(U,2), np.power(V,2)),0.5)
-skip = (slice(None, None, 8), slice(None, None, 8))
-plt.quiver(X, Z, U/r, V/r, width=.005, pivot='mid')
-plt.savefig("Bx_Bz.png", bbox_inches="tight", dpi=300, )
+plot_fields("z", "Bz", slice_z_forx, "x", "Bx", slice_x_forz)
+plot_fields("z", "Bz", slice_z_fory, "y", "By", slice_y_forz)
+plot_fields("x", "Bx", slice_x_fory, "y", "By", slice_y_forx)
