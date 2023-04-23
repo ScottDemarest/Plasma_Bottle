@@ -51,36 +51,22 @@ Nz = Lz/dz
 
 # =================================================================
 
-with uproot.open("B_field_inputs.root") as f:
-    Bx_f = f["B_field"]["Bx"].array()
-    By_f = f["B_field"]["By"].array()
-    Bz_f = f["B_field"]["Bz"].array()
+# with uproot.open("B_field_inputs.root") as f:
+#     Bx_f = f["B_field"]["Bx"].array()
+#     By_f = f["B_field"]["By"].array()
+#     Bz_f = f["B_field"]["Bz"].array()
 
 
-# laser wavelength and period
-# l0           = 2*pi    # laser wavelength in normalized units
 t0           = 2*pi    # optical cycle duration in normalized units
-# # Grid size and total simulated time
-# Lx           = 2.*l0
-# Ly           = 2.*l0
-# Lz           = 2.*l0
 Tsim         = 1.*t0  # duration of the simulation, orignally 18
 
 from scipy.constants import c, epsilon_0, e, m_e # constants in SI units
 wavelength_SI= 10e-2 # laser wavelength, m // 10 cm
-# Normalization quantities
-
 
 ####################  Simulated domain and time interval #######################
 # Spatial and temporal resolution
-# resx         = 32.                     # nb of cells in one laser wavelength
-# resy         = 32.                     # nb of cells in one laser wavelength
-# resz         = 32.
 rest           = 1.                     # nb of timesteps in one optical cycle. originally 500
 # Mesh and integration timestep
-# dx           = l0/resx
-# dy           = l0/resy
-# dz           = l0/resz
 dt           = t0/rest
 
 
@@ -110,101 +96,102 @@ c           = scipy.constants.c        # speed of light in vacuum
 eps0        = scipy.constants.epsilon_0 # Vacuum permittivity, F/m
 e           = scipy.constants.e         # Elementary charge, C
 me          = scipy.constants.m_e       # Electron mass, kg
+mp          = scipy.constants.m_p       # Proton mass, kg
+k           = scipy.constants.Boltzmann  # Boltzmann constant
 
 omega_r     = c/wavelength_SI           # reference frequency
 B_r         = me * omega_r / e          # reference_magnetic field
 
-xx = np.linspace(0, Lx, int(Nx))
-yy = np.linspace(0, Ly, int(Ny))
-zz = np.linspace(0, Lz, int(Nz))
+# xx = np.linspace(0, Lx, int(Nx))
+# yy = np.linspace(0, Ly, int(Ny))
+# zz = np.linspace(0, Lz, int(Nz))
 
-def find_nearest(array, value):
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
+# def find_nearest(array, value):
+#     array = np.asarray(array)
+#     idx = (np.abs(array - value)).argmin()
+#     return idx
 
-def Bx(x,y,z):
-    i = find_nearest(xx, x)
-    j = find_nearest(yy, y)
-    k = find_nearest(zz, z)
-    return Bx_f[i][j][k]
+# def Bx(x,y,z):
+#     i = find_nearest(xx, x)
+#     j = find_nearest(yy, y)
+#     k = find_nearest(zz, z)
+#     return Bx_f[i][j][k]
 
-def By(x,y,z):
-    i = find_nearest(xx, x)
-    j = find_nearest(yy, y)
-    k = find_nearest(zz, z)
-    return By_f[i][j][k]
+# def By(x,y,z):
+#     i = find_nearest(xx, x)
+#     j = find_nearest(yy, y)
+#     k = find_nearest(zz, z)
+#     return By_f[i][j][k]
 
-def Bz(x,y,z):
-    i = find_nearest(xx, x)
-    j = find_nearest(yy, y)
-    k = find_nearest(zz, z)
-    return Bz_f[i][j][k]
+# def Bz(x,y,z):
+#     i = find_nearest(xx, x)
+#     j = find_nearest(yy, y)
+#     k = find_nearest(zz, z)
+#     return Bz_f[i][j][k]
 
-field_profile = {'Bx': Bx, 'By': By, 'Bz': Bz}
+# field_profile = {'Bx': Bx, 'By': By, 'Bz': Bz}
 
-for field in ['Bx', 'By', 'Bz']:
-    ExternalField(
-        field=field,
-        profile = field_profile[field]
-    )
-
-# def Bx(x,y,z):  
-#     result = x*y*z
-#     return result
-
-# def By(x,y,z,t): 
-#     result = two_rings_y(x,y,z, x0,y0,z0, x1,y1,z1, B0, R)
-#     return result
-
-# def Bz(x,y,z,t):  
-#     result = two_rings_z(x,y,z, x0,y0,z0, x1,y1,z1, B0, R)
-#     return result
-
-# ExternalField(  
-#     field = "Bx",
-#     profile = Bx  # f(x,t)
-# )
+# for field in ['Bx', 'By', 'Bz']:
+#     ExternalField(
+#         field=field,
+#         profile = field_profile[field]
+#     )
 
 # plasma parameters
 # n0 = 4 * N_r_SI / N_r         # initial plasma density, normalized units
 # n0_ion = 4 * N_r_SI_ion / N_r         # initial plasma density, normalized units
 
-# n0 = 4
+n0 = 1
 
-# def ne(x,y):  # Conductor density (electrons)
-#     return n0 * math.exp(-x**2 / (2 * sigma**2))
+def ne(x,y,z):  # Ball of plasma
+    # Radius
+    R = Lx/3
 
-# def ne_ions(x,y):  # Conductor density (ions)
-#     return n0 * math.exp(-x**2 / (2 * sigma**2))
+    # Center
+    x0 = Lx/2
+    y0 = Ly/2
+    z0 = Lz/2
 
-# Species(
-#     name = 'ion',
-#     position_initialization = 'regular',
-#     momentum_initialization = 'cold',
-#     particles_per_cell = 4,
-#     mass = m_i_SI / me, # 52809 = air molecule avg weight = 28.97 g/mol. e mass = 9.109e-28 g
-#     # mass=28.97,
-#     charge = 1.,  # normalized units
-#     number_density = ne,
-#     boundary_conditions = [
-#         ["reflective", "remove"],
-#         ["remove", "remove"],
-#     ]
-# )
-# Species(
-#     name = 'eon',
-#     position_initialization = 'regular',
-#     momentum_initialization = 'cold',
-#     particles_per_cell = 4,
-#     mass = 1.,    # normalized units
-#     charge = -1., # normalized units
-#     number_density = ne,
-#     boundary_conditions = [
-#         ["reflective", "remove"],
-#         ["remove", "remove"],
-#     ] 
-# )
+    if ((x-x0)**2 + (y-y0)**2 + (z-z0)**2) < R**2:
+        return 1.
+    else:
+        return 0.
+
+E_rest = me * c**2
+
+Tk = 1000  # Kelvin temperature
+Te = Tk * k / E_rest  
+
+Species(
+    name = 'ion',
+    position_initialization = 'random',
+    momentum_initialization = 'maxwell-juettner',
+    particles_per_cell = 5,
+    mass = mp/me, 
+    charge = 1.,  # normalized units
+    number_density = ne,
+    temperature = [Te],
+    boundary_conditions = [
+        ["remove", "remove"],
+        ["remove", "remove"],
+        ["remove", "remove"],
+    ]
+)
+Species(
+    name = 'eon',
+    position_initialization = 'random',
+    momentum_initialization = 'maxwell-juettner',
+    particles_per_cell = 5,
+    mass = 1.,    # normalized units
+    charge = -1., # normalized units
+    number_density = ne,
+    temperature = [Te],
+    boundary_conditions = [
+        ["remove", "remove"],
+        ["remove", "remove"],
+        ["remove", "remove"],
+    ] 
+)
 
 
 globalEvery = 1
@@ -228,13 +215,25 @@ DiagFields(
     fields = ['Bx','By','Bz'] #"Env_A_abs" doesn't exist?
 )
 
+DiagParticleBinning(
+    deposited_quantity = "weight",
+    every = globalEvery,
+    species = ["eon","ion"],
+    axes = [
+        ["x", 0., Main.grid_length[0], 400],
+        ["y", 0., Main.grid_length[1], 400],
+        ["z", 0., Main.grid_length[2], 400],
+    ]
+)
+
+
 # DiagParticleBinning(
 #     deposited_quantity = "weight",
 #     every = globalEvery,
-#     species = ["eon"],
+#     species = ["eon","ion"],
 #     axes = [
-#         ["x", 0., Main.grid_length[0], 400],
 #         ["y", 0., Main.grid_length[1], 400],
+#         ["z", 0., Main.grid_length[2], 400],
 #     ]
 # )
 
