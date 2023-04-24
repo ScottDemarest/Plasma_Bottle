@@ -50,8 +50,8 @@ Main(
     simulation_time = Tsim, # normalized units
      
     EM_boundary_conditions = [
-        ['silver-muller'],
-        ['periodic'],
+        ['PML'],
+        ['PML'],
     ],
     
     random_seed = smilei_mpi_rank
@@ -73,9 +73,12 @@ plateau_length = 0.44*l0     # length of plateau of plasma density profile, norm
 
 #n0 = 1
 
-PrescribedField( # SOmething is wrong with this field
+amplitude = 1
+
+PrescribedField( # Something is wrong with this field
     field = "Bx_m",
-    profile = constant(100.0, xvacuum=100.0)
+    # profile = cosine(0.5, 1., xvacuum = 0, xphi=0., xnumber=1)
+    profile = constant(100.0, xvacuum=Lx/2)
 )
 
 def ne(x,y):  # Ball of plasma
@@ -94,7 +97,7 @@ def ne(x,y):  # Ball of plasma
 #E_rest = me * c**2
 
 #Tk = 100000  # Kelvin temperature
-Te = 1.0 
+Te = 0.1
 
 Species(
     name = 'ion',
@@ -124,9 +127,12 @@ Species(
         ["remove", "remove"],
     ] 
 )
-globalEvery = 75
+globalEvery = 100
 
-
+DiagFields(
+    every = globalEvery,
+    fields = ['Bx','Rho_ion','Rho_eon'] #"Env_A_abs" doesn't exist?
+)
 
 DiagParticleBinning(
     deposited_quantity = "weight",
@@ -136,4 +142,34 @@ DiagParticleBinning(
         ["x", 0., Main.grid_length[0], 200],
         ["y", 0., Main.grid_length[1], 200],
     ]
+)
+
+DiagParticleBinning(
+    deposited_quantity = "weight",
+    every = 100,
+    species = ["eon"],
+    axes = [
+        ["x", 0., Main.grid_length[0], 200],
+        ["y", 0., Main.grid_length[1], 200],
+    ]
+)
+
+DiagParticleBinning(
+    deposited_quantity = "weight",
+    every = 100,
+    species = ["ion"],
+    axes = [
+        ["x", 0., Main.grid_length[0], 200],
+        ["y", 0., Main.grid_length[1], 200],
+    ]
+)
+
+DiagProbe(
+    every = globalEvery,
+    origin = [0., Main.grid_length[1]/2.],
+    corners = [
+        [Main.grid_length[0], Main.grid_length[1]/2.],
+    ],
+    number = [int(Lx/dx)],
+    fields = ['Bx','By','Bz','Rho_ion','Rho_eon']
 )
