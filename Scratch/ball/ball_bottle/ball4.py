@@ -174,3 +174,13 @@ DiagParticleBinning(
         ["y", 0., Main.grid_length[1], 200],
     ]
 )
+
+DiagProbe(
+    every = globalEvery,
+    origin = [0., Main.grid_length[1]/2.],
+    corners = [
+        [Main.grid_length[0], Main.grid_length[1]/2.],
+    ],
+    number = [int(Lx/dx)],
+    fields = ['Rho_ion','Rho_eon']
+)

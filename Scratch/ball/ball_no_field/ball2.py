@@ -50,8 +50,8 @@ Main(
     simulation_time = Tsim, # normalized units
      
     EM_boundary_conditions = [
-        ['silver-muller'],
-        ['periodic'],
+        ['PML'],
+        ['PML'],
     ],
     
     random_seed = smilei_mpi_rank
@@ -89,7 +89,7 @@ def ne(x,y):  # Ball of plasma
 #E_rest = me * c**2
 
 #Tk = 100000  # Kelvin temperature
-Te = 1.0 
+Te = 0.1
 
 Species(
     name = 'ion',
